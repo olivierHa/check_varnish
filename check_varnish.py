@@ -110,8 +110,6 @@ def getopts():
     req = argp.add_mutually_exclusive_group(required=True)
     req.add_argument('-f', '--field', metavar='FIELD', dest='arg_field', action='store', default='MAIN.sess_dropped',
                       help='field to query')
-    req.add_argument('-l', '--list', metavar='LIST', dest='arg_field', action='store', default='',
-                      help='list of fields to query, no thresholds possible')
     argp.add_argument('-n', '--name', metavar='NAME', dest='arg_name', action='store', default='',
                       help='name of Varnish instance (optional)')
     args = argp.parse_args()
