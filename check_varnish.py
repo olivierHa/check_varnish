@@ -25,6 +25,7 @@
 # 1.0 Aug 2, 2015: Initial script created
 # 1.1 Nov 14, 2017: Add option -n to support varnish instance names
 # 1.2 Feb 18, 2020: Remove nagiosplugin dependency, supports multiple fields, GPL2, supports python3
+# 1.3 Nov 10, 2020: python3 compatibility fix in exception handling
 
 """Varnish Monitoring check."""
 
@@ -56,7 +57,7 @@ def check():
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     output, unused_err = process.communicate()
     retcode = process.poll()
-  except OSError, e:
+  except OSError as e:
     print("Error: Executing command failed:")
     print(' '.join(cmd))
     sys.exit(2)
