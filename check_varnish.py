@@ -5,7 +5,7 @@
 # Official repository : https://github.com/olivierHa/check_varnish
 #
 # Copyright (C) 2015 Olivier Hanesse olivier.hanesse@gmail.com
-# Copyright (C) 2017,2020 Claudio Kuenzler www.claudiokuenzler.com
+# Copyright (C) 2017,2020,2022 Claudio Kuenzler www.claudiokuenzler.com
 #
 # Licence:      GNU General Public Licence (GPL) http://www.gnu.org/
 # This program is free software; you can redistribute it and/or
@@ -26,6 +26,7 @@
 # 1.1 Nov 14, 2017: Add option -n to support varnish instance names
 # 1.2 Feb 18, 2020: Remove nagiosplugin dependency, supports multiple fields, GPL2, supports python3
 # 1.3 Nov 10, 2020: python3 compatibility fix in exception handling
+# 1.4 Jun 24, 2022: Fix exit code when threshold check is OK
 
 """Varnish Monitoring check."""
 
@@ -86,7 +87,7 @@ def check():
       output="VARNISH OK - {} is {}" .format(keys[0], values[0])
       perfdata="{}={};{};{};;" .format(keys[0], values[0], warning, critical)
       print("{} | {}" .format(output, perfdata))
-      sys.exit(1)
+      sys.exit(0)
   else:
     # Multiple values checked, no thresholds just listing (main purpose: graphing)
       x=0
