@@ -104,6 +104,11 @@ def check():
       for key in keys:
         multiout += "{} is {} - " .format(keys[x], values[x])
         multiperfdata += "{}={};{};{};; " .format(keys[x], values[x], warning, critical)
+        if hitratio:
+          if key in 'MAIN.cache_hit':
+            hitvalue = float(values[x])
+          if key in 'MAIN.cache_miss':
+            missvalue = float(values[x])
         x+=1
       if hitratio and hitvalue > 0:
         #print(hitvalue)  # Debug
