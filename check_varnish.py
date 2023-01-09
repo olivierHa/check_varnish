@@ -5,7 +5,7 @@
 # Official repository : https://github.com/olivierHa/check_varnish
 #
 # Copyright (C) 2015 Olivier Hanesse olivier.hanesse@gmail.com
-# Copyright (C) 2017,2020,2022 Claudio Kuenzler www.claudiokuenzler.com
+# Copyright (C) 2017,2020,2022,2023 Claudio Kuenzler www.claudiokuenzler.com
 #
 # Licence:      GNU General Public Licence (GPL) http://www.gnu.org/
 # This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@
 # 1.2 Feb 18, 2020: Remove nagiosplugin dependency, supports multiple fields, GPL2, supports python3
 # 1.3 Nov 10, 2020: python3 compatibility fix in exception handling
 # 1.4 Jun 24, 2022: Fix exit code when threshold check is OK
+# 1.5 Jan 9, 2023: Add Cache Hit Rate calculation (-r / --hitrate)
 
 """Varnish Monitoring check."""
 
@@ -41,10 +42,11 @@ fields=[]
 instance=''
 warning=''
 critical=''
+hitratio=False
 
 def check():
 
-  global fields,instance,warning,critical
+  global fields,instance,hitratio,warning,critical
   keys=[]
   values=[]
   output=''
@@ -70,6 +72,12 @@ def check():
     #print(json_data[field]['value']) # Debug
     keys.append(field)
     values.append(json_data[field]['value'])
+
+  # If hitratio calculation was flagged (-r/--hitratio), make sure MAIN.cache_hit and MAIN.cache_miss fields exist
+  if hitratio:
+    if 'MAIN.cache_hit' not in keys or 'MAIN.cache_miss' not in keys:
+        print("VARNISH UNKNOWN - Must use MAIN.cache_hit and MAIN.cache_miss in field list to calculate hit ratio")
+        sys.exit(3)
 
   if (len(keys) == 1):
     # Single value, can be compared against thresholds
@@ -97,13 +105,20 @@ def check():
         multiout += "{} is {} - " .format(keys[x], values[x])
         multiperfdata += "{}={};{};{};; " .format(keys[x], values[x], warning, critical)
         x+=1
+      if hitratio and hitvalue > 0:
+        #print(hitvalue)  # Debug
+        #print(missvalue) # Debug
+        hitrate = hitvalue / (hitvalue + missvalue)
+        multiout += "Cache Hit Rate is {:.2f} - " .format(hitrate)
+        multiperfdata += "hitrate={:.2f};{};{};; " .format(hitrate, warning, critical)
+
       print("VARNISH OK - {} | {}" .format(multiout, multiperfdata))
       sys.exit(0)
 
 # ----------------------------------------------------------------------
 
 def getopts():
-    global fields,instance,warning,critical
+    global fields,instance,hitratio,warning,critical
     argp = argparse.ArgumentParser(description=__doc__)
     argp.add_argument('-w', '--warning', metavar='RANGE', dest='arg_warning', default=0,
                       help='return warning if value is outside RANGE')
@@ -114,10 +129,13 @@ def getopts():
                       help='field to query')
     argp.add_argument('-n', '--name', metavar='NAME', dest='arg_name', action='store', default='',
                       help='name of Varnish instance (optional)')
+    argp.add_argument('-r', '--hitratio', dest='arg_hitratio', action='store_true', default=False,
+                      help='calculate cache hit ratio (optional)')
     args = argp.parse_args()
 
     fields=args.arg_field.split(',')
     instance=args.arg_name
+    hitratio=args.arg_hitratio
     warning=int(args.arg_warning)
     critical=int(args.arg_critical)
 
