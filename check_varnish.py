@@ -28,6 +28,7 @@
 # 1.3 Nov 10, 2020: python3 compatibility fix in exception handling
 # 1.4 Jun 24, 2022: Fix exit code when threshold check is OK
 # 1.5 Jan 9, 2023: Add Cache Hit Rate calculation (-r / --hitrate)
+# 1.6 Aug 22, 2023: Support new varnishstat output (counters) for Varnish >= 6.5.0 (-v / --version)
 
 """Varnish Monitoring check."""
 
@@ -43,10 +44,11 @@ instance=''
 warning=''
 critical=''
 hitratio=False
+varnishversion=0
 
 def check():
 
-  global fields,instance,hitratio,warning,critical
+  global fields,instance,hitratio,warning,critical,varnishversion
   keys=[]
   values=[]
   output=''
@@ -69,9 +71,13 @@ def check():
 
   for field in fields:
     #print(field) # Debug
-    #print(json_data[field]['value']) # Debug
     keys.append(field)
-    values.append(json_data[field]['value'])
+    if varnishversion >= 650:
+      #print(json_data['counters'][field]['value']) # Debug
+      values.append(json_data['counters'][field]['value'])
+    else:
+      #print(json_data[field]['value']) # Debug
+      values.append(json_data[field]['value'])
 
   # If hitratio calculation was flagged (-r/--hitratio), make sure MAIN.cache_hit and MAIN.cache_miss fields exist
   if hitratio:
@@ -123,7 +129,7 @@ def check():
 # ----------------------------------------------------------------------
 
 def getopts():
-    global fields,instance,hitratio,warning,critical
+    global fields,instance,hitratio,varnishversion,warning,critical
     argp = argparse.ArgumentParser(description=__doc__)
     argp.add_argument('-w', '--warning', metavar='RANGE', dest='arg_warning', default=0,
                       help='return warning if value is outside RANGE')
@@ -136,11 +142,14 @@ def getopts():
                       help='name of Varnish instance (optional)')
     argp.add_argument('-r', '--hitratio', dest='arg_hitratio', action='store_true', default=False,
                       help='calculate cache hit ratio (optional)')
+    argp.add_argument('-v', '--version', metavar='VERSION', dest='arg_version', action='store', default=600,
+                      help='define Varnish version (varnishstat output changed with Varnish 6.5.0+')
     args = argp.parse_args()
 
     fields=args.arg_field.split(',')
     instance=args.arg_name
     hitratio=args.arg_hitratio
+    varnishversion=int(args.arg_version.replace(".",""))
     warning=int(args.arg_warning)
     critical=int(args.arg_critical)
 
