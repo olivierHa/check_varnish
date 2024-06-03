@@ -29,6 +29,7 @@
 # 1.4 Jun 24, 2022: Fix exit code when threshold check is OK
 # 1.5 Jan 9, 2023: Add Cache Hit Rate calculation (-r / --hitrate)
 # 1.6 Aug 22, 2023: Support new varnishstat output (counters) for Varnish >= 6.5.0 (-v / --version)
+# 1.7 Jun 3, 2024: Bugfix in Varnish version check (only supports major.minor format now, e.g. 6.5)
 
 """Varnish Monitoring check."""
 
@@ -72,7 +73,7 @@ def check():
   for field in fields:
     #print(field) # Debug
     keys.append(field)
-    if varnishversion >= 650:
+    if varnishversion >= 65:
       #print(json_data['counters'][field]['value']) # Debug
       values.append(json_data['counters'][field]['value'])
     else:
@@ -142,9 +143,13 @@ def getopts():
                       help='name of Varnish instance (optional)')
     argp.add_argument('-r', '--hitratio', dest='arg_hitratio', action='store_true', default=False,
                       help='calculate cache hit ratio (optional)')
-    argp.add_argument('-v', '--version', metavar='VERSION', dest='arg_version', action='store', default=600,
-                      help='define Varnish version (varnishstat output changed with Varnish 6.5.0+')
+    argp.add_argument('-v', '--version', metavar='VERSION', dest='arg_version', action='store', default=60,
+                      help='define Varnish version (only major.minor version, without bugfix releases), example: 6.0 (varnishstat output changed with Varnish 6.5+')
     args = argp.parse_args()
+
+    if args.arg_version.count('.') >= 2:
+        print("VARNISH UNKNOWN - Must use version in format major.minor, example: 6.5")
+        sys.exit(3)
 
     fields=args.arg_field.split(',')
     instance=args.arg_name
