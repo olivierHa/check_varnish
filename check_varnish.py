@@ -5,7 +5,7 @@
 # Official repository : https://github.com/olivierHa/check_varnish
 #
 # Copyright (C) 2015 Olivier Hanesse olivier.hanesse@gmail.com
-# Copyright (C) 2017,2020,2022,2023 Claudio Kuenzler www.claudiokuenzler.com
+# Copyright (C) 2017,2020,2022,2023,2024 Claudio Kuenzler www.claudiokuenzler.com
 #
 # Licence:      GNU General Public Licence (GPL) http://www.gnu.org/
 # This program is free software; you can redistribute it and/or
@@ -28,6 +28,9 @@
 # 1.3 Nov 10, 2020: python3 compatibility fix in exception handling
 # 1.4 Jun 24, 2022: Fix exit code when threshold check is OK
 # 1.5 Jan 9, 2023: Add Cache Hit Rate calculation (-r / --hitrate)
+# 1.6 Aug 22, 2023: Support new varnishstat output (counters) for Varnish >= 6.5.0 (-v / --version)
+# 1.7 Jun 3, 2024: Bugfix in Varnish version check (only supports major.minor format now, e.g. 6.5)
+# 1.8 Jun 21, 2024: Improve Varnish version detection (automatic), remove -v/--version parameter
 
 """Varnish Monitoring check."""
 
@@ -43,10 +46,11 @@ instance=''
 warning=''
 critical=''
 hitratio=False
+varnishversion=0
 
 def check():
 
-  global fields,instance,hitratio,warning,critical
+  global fields,instance,hitratio,warning,critical,varnishversion
   keys=[]
   values=[]
   output=''
@@ -67,11 +71,19 @@ def check():
 
   json_data = json.loads(output)
 
+  # Detect newer Varnish versions (6.5+)
+  if "version" in json_data:
+    varnishversion = 65
+
   for field in fields:
     #print(field) # Debug
-    #print(json_data[field]['value']) # Debug
     keys.append(field)
-    values.append(json_data[field]['value'])
+    if varnishversion >= 65:
+      #print(json_data['counters'][field]['value']) # Debug
+      values.append(json_data['counters'][field]['value'])
+    else:
+      #print(json_data[field]['value']) # Debug
+      values.append(json_data[field]['value'])
 
   # If hitratio calculation was flagged (-r/--hitratio), make sure MAIN.cache_hit and MAIN.cache_miss fields exist
   if hitratio:
