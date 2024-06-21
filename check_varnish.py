@@ -5,7 +5,7 @@
 # Official repository : https://github.com/olivierHa/check_varnish
 #
 # Copyright (C) 2015 Olivier Hanesse olivier.hanesse@gmail.com
-# Copyright (C) 2017,2020,2022,2023 Claudio Kuenzler www.claudiokuenzler.com
+# Copyright (C) 2017,2020,2022,2023,2024 Claudio Kuenzler www.claudiokuenzler.com
 #
 # Licence:      GNU General Public Licence (GPL) http://www.gnu.org/
 # This program is free software; you can redistribute it and/or
@@ -30,6 +30,7 @@
 # 1.5 Jan 9, 2023: Add Cache Hit Rate calculation (-r / --hitrate)
 # 1.6 Aug 22, 2023: Support new varnishstat output (counters) for Varnish >= 6.5.0 (-v / --version)
 # 1.7 Jun 3, 2024: Bugfix in Varnish version check (only supports major.minor format now, e.g. 6.5)
+# 1.8 Jun 21, 2024: Improve Varnish version detection (automatic), remove -v/--version parameter
 
 """Varnish Monitoring check."""
 
@@ -69,6 +70,10 @@ def check():
     sys.exit(2)
 
   json_data = json.loads(output)
+
+  # Detect newer Varnish versions (6.5+)
+  if "version" in json_data:
+    varnishversion = 65
 
   for field in fields:
     #print(field) # Debug
@@ -143,18 +148,11 @@ def getopts():
                       help='name of Varnish instance (optional)')
     argp.add_argument('-r', '--hitratio', dest='arg_hitratio', action='store_true', default=False,
                       help='calculate cache hit ratio (optional)')
-    argp.add_argument('-v', '--version', metavar='VERSION', dest='arg_version', action='store', default=60,
-                      help='define Varnish version (only major.minor version, without bugfix releases), example: 6.0 (varnishstat output changed with Varnish 6.5+')
     args = argp.parse_args()
-
-    if args.arg_version.count('.') >= 2:
-        print("VARNISH UNKNOWN - Must use version in format major.minor, example: 6.5")
-        sys.exit(3)
 
     fields=args.arg_field.split(',')
     instance=args.arg_name
     hitratio=args.arg_hitratio
-    varnishversion=int(args.arg_version.replace(".",""))
     warning=int(args.arg_warning)
     critical=int(args.arg_critical)
 
