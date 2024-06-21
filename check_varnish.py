@@ -135,7 +135,7 @@ def check():
 # ----------------------------------------------------------------------
 
 def getopts():
-    global fields,instance,hitratio,varnishversion,warning,critical
+    global fields,instance,hitratio,warning,critical
     argp = argparse.ArgumentParser(description=__doc__)
     argp.add_argument('-w', '--warning', metavar='RANGE', dest='arg_warning', default=0,
                       help='return warning if value is outside RANGE')
